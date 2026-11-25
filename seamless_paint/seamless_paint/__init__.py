@@ -1,6 +1,18 @@
-"""Seamless 2D pattern painting tool (toroidal texture tile editor)."""
+"""Seamless 2D pattern painting: toroidal and general-lattice kernels."""
 
-from .kernel import SeamlessTile, HAVE_NUMPY
+from .kernel import SeamlessTile, SeamlessInputError, HAVE_NUMPY
+from .lattice import Lattice
 
-__all__ = ["SeamlessTile", "HAVE_NUMPY"]
-__version__ = "1.0.0"
+# Descriptive aliases for callers/tests that name the oblique tile explicitly.
+LatticeTile = SeamlessTile
+ObliqueTile = SeamlessTile
+
+__all__ = [
+    "SeamlessTile",
+    "LatticeTile",
+    "ObliqueTile",
+    "Lattice",
+    "SeamlessInputError",
+    "HAVE_NUMPY",
+]
+__version__ = "2.0.0"

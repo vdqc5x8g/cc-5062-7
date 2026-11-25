@@ -3,31 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>无缝图案绘画窗 · Seamless Pattern Painter</title>
+<title>晶格无缝绘画窗 · Lattice Seamless Painter</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
 <header>
-  <h1>无缝图案绘画窗</h1>
+  <h1>晶格无缝绘画窗</h1>
   <div id="status" class="status ok">内核就绪，等待落笔。</div>
 </header>
 
 <main>
   <section class="paint-column">
-    <h2>纹理单元（可沿边缘落笔，自动周期折叠）</h2>
+    <h2>世界画布视图（基向量晶格，可沿格边/格点落笔，自动周期折叠）</h2>
     <div class="canvas-wrap">
       <canvas id="paint" width="512" height="512"></canvas>
       <canvas id="ghost" width="512" height="512"></canvas>
     </div>
-    <p class="hint">虚线为周期接缝。笔尖越过左/右、上/下边界时，写入对侧对应区域；角点落笔会在四个角同时留下同一笔印。</p>
+    <p class="hint">实线亮框为基向量张成的基本平行四边形，细格线为重复晶格。笔刷在真实画布空间保持尺寸与旋转形状；越过任意格边或格点时，内核按格元身份枚举全部周期副本并写入同一纹样单元。右侧平铺预览是真实斜向晶格平移，不是倾斜截图。</p>
   </section>
 
   <aside class="controls">
-    <h2>控件（由无缝图案内核驱动）</h2>
+    <h2>笔刷（世界空间，可旋转）</h2>
 
-    <label>笔尖半径（可大于单元尺寸）
+    <label>笔尖半径
       <input type="range" id="radius" min="1" max="400" step="1" value="12">
       <span id="radiusVal">12 px</span>
+    </label>
+
+    <label>纵/横轴比（1 为正圆，&lt;1 扁平）
+      <input type="range" id="aspect" min="0.2" max="2" step="0.05" value="1">
+      <span id="aspectVal">1.00</span>
+    </label>
+
+    <label>局部笔刷旋转角
+      <input type="range" id="angle" min="0" max="180" step="1" value="0">
+      <span id="angleVal">0°</span>
     </label>
 
     <label>边缘柔化
@@ -57,13 +67,46 @@
     </div>
 
     <fieldset>
+      <legend>重复晶格基向量（世界像素）</legend>
+      <label>预设
+        <select id="basisPreset">
+          <option value="ortho">正交 256×256（初版模式）</option>
+          <option value="diamond60">60° 等长斜格</option>
+          <option value="halfdrop">错缝半落砖 a=(W,0), b=(W/2,H)</option>
+          <option value="acute15">锐角 15° 单元</option>
+        </select>
+      </label>
+      <div class="basis-grid">
+        <label>a.x <input type="number" id="ax" value="256" step="1"></label>
+        <label>a.y <input type="number" id="ay" value="0" step="1"></label>
+        <label>b.x <input type="number" id="bx" value="0" step="1"></label>
+        <label>b.y <input type="number" id="by" value="256" step="1"></label>
+      </div>
+      <div class="mode-row">
+        <label class="radio"><input type="radio" name="bmode" value="rewrap" checked>
+          保持物理笔迹，按新基重新包裹</label>
+        <label class="radio"><input type="radio" name="bmode" value="deform">
+          变形现有内容（参数格随基向量形变）</label>
+      </div>
+      <div class="button-row">
+        <button id="applyBasis">应用基向量</button>
+        <button id="compareBasis">对比两种换基影响</button>
+      </div>
+      <pre id="basisInfo" class="basis-info"></pre>
+      <div id="compareWrap" class="compare-wrap" hidden>
+        <figure><img id="cmpRewrap" alt="rewrap preview"><figcaption>保持物理笔迹 / 重新包裹</figcaption></figure>
+        <figure><img id="cmpDeform" alt="deform preview"><figcaption>变形现有内容</figcaption></figure>
+      </div>
+    </fieldset>
+
+    <fieldset>
       <legend>新建单元尺寸</legend>
       <label>宽 <input type="number" id="newW" value="256" min="8" max="1024"></label>
       <label>高 <input type="number" id="newH" value="256" min="8" max="1024"></label>
       <button id="newTile">新建（丢弃当前）</button>
     </fieldset>
 
-    <h2>周期连续预览</h2>
+    <h2>周期连续预览（真实晶格平铺）</h2>
     <label>重复单元数
       <input type="range" id="copies" min="1" max="8" step="1" value="3">
       <span id="copiesVal">3 × 3</span>
@@ -72,11 +115,12 @@
 
     <h2>交付</h2>
     <div class="button-row">
-      <button id="save">保存单元 + 笔画历史 + 预览</button>
+      <button id="save">保存单元 + 历史(记录基向量) + 预览</button>
     </div>
     <div class="button-row">
-      <a id="dlUnit" class="button-like" href="/api/tile.png" download="seamless_unit.png">下载原始单元 PNG</a>
-      <a id="dlMontage" class="button-like" href="/api/preview.png?copies=3" download="seamless_montage.png">下载平铺 PNG</a>
+      <a id="dlUnit" class="button-like" href="/api/tile.png" download="seamless_unit.png">下载参数单元 PNG</a>
+      <a id="dlMontage" class="button-like" href="/api/preview.png?copies=3" download="seamless_montage.png">下载坐标平铺 PNG</a>
+      <a id="dlLattice" class="button-like" href="/api/download/lattice_tile?copies=3" download="lattice_tiling.png">下载真实斜格平铺 PNG</a>
     </div>
     <pre id="savedInfo" class="saved-info"></pre>
   </aside>
