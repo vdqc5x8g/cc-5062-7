@@ -1,0 +1,2 @@
+# Optional acceleration. The kernel runs without it using a pure-Python path.
+numpy>=1.24

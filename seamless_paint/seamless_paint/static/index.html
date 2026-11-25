@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>无缝图案绘画窗 · Seamless Pattern Painter</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header>
+  <h1>无缝图案绘画窗</h1>
+  <div id="status" class="status ok">内核就绪，等待落笔。</div>
+</header>
+
+<main>
+  <section class="paint-column">
+    <h2>纹理单元（可沿边缘落笔，自动周期折叠）</h2>
+    <div class="canvas-wrap">
+      <canvas id="paint" width="512" height="512"></canvas>
+      <canvas id="ghost" width="512" height="512"></canvas>
+    </div>
+    <p class="hint">虚线为周期接缝。笔尖越过左/右、上/下边界时，写入对侧对应区域；角点落笔会在四个角同时留下同一笔印。</p>
+  </section>
+
+  <aside class="controls">
+    <h2>控件（由无缝图案内核驱动）</h2>
+
+    <label>笔尖半径（可大于单元尺寸）
+      <input type="range" id="radius" min="1" max="400" step="1" value="12">
+      <span id="radiusVal">12 px</span>
+    </label>
+
+    <label>边缘柔化
+      <input type="range" id="soft" min="0" max="1" step="0.01" value="0.25">
+      <span id="softVal">0.25</span>
+    </label>
+
+    <label>颜色
+      <input type="color" id="color" value="#d6336c">
+    </label>
+
+    <label>不透明度
+      <input type="range" id="alpha" min="0.02" max="1" step="0.02" value="0.9">
+      <span id="alphaVal">0.90</span>
+    </label>
+
+    <label>斜向越界策略
+      <select id="policy">
+        <option value="neighbor">邻块延拓（枚举所有周期副本，覆盖并集）</option>
+        <option value="lattice">格基内采样（最近周期副本）</option>
+      </select>
+    </label>
+
+    <div class="button-row">
+      <button id="undo">撤销一笔</button>
+      <button id="clear" class="danger">清空单元</button>
+    </div>
+
+    <fieldset>
+      <legend>新建单元尺寸</legend>
+      <label>宽 <input type="number" id="newW" value="256" min="8" max="1024"></label>
+      <label>高 <input type="number" id="newH" value="256" min="8" max="1024"></label>
+      <button id="newTile">新建（丢弃当前）</button>
+    </fieldset>
+
+    <h2>周期连续预览</h2>
+    <label>重复单元数
+      <input type="range" id="copies" min="1" max="8" step="1" value="3">
+      <span id="copiesVal">3 × 3</span>
+    </label>
+    <canvas id="preview" width="384" height="384"></canvas>
+
+    <h2>交付</h2>
+    <div class="button-row">
+      <button id="save">保存单元 + 笔画历史 + 预览</button>
+    </div>
+    <div class="button-row">
+      <a id="dlUnit" class="button-like" href="/api/tile.png" download="seamless_unit.png">下载原始单元 PNG</a>
+      <a id="dlMontage" class="button-like" href="/api/preview.png?copies=3" download="seamless_montage.png">下载平铺 PNG</a>
+    </div>
+    <pre id="savedInfo" class="saved-info"></pre>
+  </aside>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
